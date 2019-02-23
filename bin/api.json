@@ -1,0 +1,58 @@
+{
+  "name": "locallook-api",
+  "info": {
+    "contact": {
+      "name": "Luke Zhang",
+      "email": "lukezhang213@gmail.com"
+    }
+  },
+  "base_url": "https://localhost.com",
+  "description": "LocalLook API",
+  "enums": {},
+  "unions": {},
+  "models": {
+    "account": {
+      "fields": [
+        {
+          "name": "id",
+          "type": "long"
+        },
+        {
+          "name": "first_name",
+          "type": "string"
+        },
+        {
+          "name": "last_name",
+          "type": "string"
+        },
+        {
+          "name": "email",
+          "type": "string"
+        }
+      ]
+    }
+  },
+  "resources": {
+    "account": {
+      "path": "/organizations/:organization/account",
+      "operations": [
+        {
+          "method": "GET",
+          "description": "Basic account information",
+          "parameters": [
+            {
+              "name": "sessionId",
+              "type": "uuid",
+              "location": "header"
+            }
+          ],
+          "responses": {
+            "200": {
+              "type": "account"
+            }
+          }
+        }
+      ]
+    }
+  }
+}
