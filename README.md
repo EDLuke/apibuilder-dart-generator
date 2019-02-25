@@ -1,4 +1,6 @@
-A sample command-line application.
+## APIBuilder Dart Generator
+Generating APIBuilder files.
 
-Created from templates made available by Stagehand under a BSD-style
-[license](https://github.com/dart-lang/stagehand/blob/master/LICENSE).
+## How To
+1. Install [Dart](https://www.dartlang.org/install)
+2. `dart bin/main.dart [your api.json]` (A sample one is provided under `bin`) 
