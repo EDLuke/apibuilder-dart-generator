@@ -1,7 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-
-import 'package:apibuilder_dart_generator/apibuilder_dart_generator.dart' as apibuilder_dart_generator;
 import 'package:built_collection/built_collection.dart';
 import 'package:code_builder/code_builder.dart' as dartBuilder;
 import 'package:dart_style/dart_style.dart';
@@ -9,27 +7,20 @@ import 'package:dart_style/dart_style.dart';
 main(List<String> arguments) {
   File file = File(arguments.first);
   String jsonRaw = file.readAsStringSync();
-//
-//  print('animalClass():\n${'=' * 40}\n${animalClass()}!');
-//  print('scopedLibrary():\n${'=' * 40}\n${scopedLibrary()}');
-
 
   Map<String, dynamic> jsonParsed = json.decode(jsonRaw);
 
   Map<String, dynamic> models = jsonParsed['models'];
 
-//  models.forEach((key, value) =>
-//    print(key+ "\n" + value.toString() + "\n")
-//  );
-
   var modelsList = models.entries.map((MapEntry<String, dynamic> entry) => Model.fromJson(entry.key, entry.value));
 
   modelsList.forEach((model) => modelClass(model));
+
 }
 
 final _dartfmt = DartFormatter();
 
-String modelClass(Model model){
+modelClass(Model model){
 
   final modelGenerated = dartBuilder.Class((b) => b
     ..name = model.name
@@ -40,9 +31,9 @@ String modelClass(Model model){
       )))
     ..constructors.addAll([
       dartBuilder.Constructor((c) => c
-        ..requiredParameters = ListBuilder(model.fields.map((field) => dartBuilder.Parameter((p) => p
-          ..name = field.name
-          ..type = dartBuilder.Reference("String"))))
+        ..optionalParameters = ListBuilder(model.fields.map((field) => dartBuilder.Parameter((p) => p
+          ..name = 'this.${field.name}'
+          ..named = true)))
       ),
       dartBuilder.Constructor((c) => c
         ..factory = true
@@ -50,10 +41,29 @@ String modelClass(Model model){
         ..requiredParameters.add(dartBuilder.Parameter((p) => p
           ..name = "json"
           ..type = dartBuilder.Reference("Map<String, dynamic>")))
-          ..body = const dartBuilder.Code(''))
+          ..body = dartBuilder.Code.scope((s){
+              return factoryConstructor(model.name, model.fields);
+          }))
     ]));
   final emitter = dartBuilder.DartEmitter();
-  print(DartFormatter().format('${modelGenerated.accept(emitter)}'));
+  final String modelString = DartFormatter().format('${modelGenerated.accept(emitter)}');
+
+  final fileName = './output/${model.name.toLowerCase()}.dart';
+
+  new File(fileName).writeAsString(modelString);
+}
+
+String factoryConstructor(String name, List<Field> fields) {
+  var parameterString = fields.map((f) =>
+  '${f.name}: json[\'${f.name}\']'
+  ).join(",\n");
+
+  var constructorString =
+      'return $name('
+      '$parameterString'
+      ');';
+
+  return constructorString;
 }
 
 class Model{
