@@ -9,7 +9,7 @@ class Account {
         email: json['email']);
   }
 
-  final String id;
+  final int id;
 
   final String first_name;
 

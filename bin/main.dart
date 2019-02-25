@@ -27,7 +27,7 @@ modelClass(Model model){
     ..fields = ListBuilder(model.fields.map((field) => dartBuilder.Field((f) => f
       ..name = field.name
       ..modifier = dartBuilder.FieldModifier.final$
-      ..type = dartBuilder.Reference("String")
+      ..type = dartBuilder.Reference(getDartType(field.type))
       )))
     ..constructors.addAll([
       dartBuilder.Constructor((c) => c
@@ -97,4 +97,33 @@ class Field{
 
 String toClassName(String className){
   return '${className[0].toUpperCase()}${className.substring(1)}';
+}
+
+String getDartType(String apiBuilderType){
+  apiBuilderType = apiBuilderType.toLowerCase();
+  String dartType;
+
+  switch(apiBuilderType){
+    case "string":
+      dartType = "String";
+      break;
+    case "boolean":
+      dartType = "bool";
+      break;
+    case "double":
+    case "decimal":
+      dartType = "double";
+      break;
+    case "integer":
+    case "long":
+      dartType = "int";
+      break;
+    case "json":
+      dartType = "Map<String, dynamic>";
+      break;
+    default:
+      throw FormatException('Type $apiBuilderType is unsupported currently');
+  }
+
+  return dartType;
 }
