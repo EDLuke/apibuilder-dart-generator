@@ -34,7 +34,7 @@
   },
   "resources": {
     "account": {
-      "path": "/organizations/:organization/account",
+      "path": "/account",
       "operations": [
         {
           "method": "GET",
@@ -42,7 +42,7 @@
           "parameters": [
             {
               "name": "sessionId",
-              "type": "uuid",
+              "type": "int",
               "location": "header"
             }
           ],

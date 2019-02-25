@@ -11,11 +11,13 @@ main(List<String> arguments) {
   Map<String, dynamic> jsonParsed = json.decode(jsonRaw);
 
   Map<String, dynamic> models = jsonParsed['models'];
+  Map<String, dynamic> resources = jsonParsed['resources'];
 
   var modelsList = models.entries.map((MapEntry<String, dynamic> entry) => Model.fromJson(entry.key, entry.value));
+  var clientsList = resources.entries.map((MapEntry<String, dynamic> entry) => Client.fromJson(entry.key, entry.value));
 
   modelsList.forEach((model) => modelClass(model));
-
+  clientsList.forEach((client) => clientClass(client);
 }
 
 final _dartfmt = DartFormatter();
@@ -53,6 +55,10 @@ modelClass(Model model){
   new File(fileName).writeAsString(modelString);
 }
 
+clientClass(Client client){
+  
+}
+
 String factoryConstructor(String name, List<Field> fields) {
   var parameterString = fields.map((f) =>
   '${f.name}: json[\'${f.name}\']'
@@ -64,6 +70,85 @@ String factoryConstructor(String name, List<Field> fields) {
       ');';
 
   return constructorString;
+}
+
+class Client{
+  final String name;
+  final String path;
+  final List<Operation> operations;
+
+  Client({this.name, this.path, this.operations});
+
+  factory Client.fromJson(String name, Map<String, dynamic> json){
+    List<Operation> operations = (json['operations'] as List).map((i) => Operation.fromJson(i)).toList();
+    return Client(
+      name: name,
+      path: json['path'],
+      operations: operations
+    );
+  }
+}
+
+class Operation{
+  final String method;
+  final String description;
+  final List<Parameter> parameters;
+  final List<Response> responses;
+  
+  Operation({this.method, this.description, this.parameters, this.responses});
+  
+  factory Operation.fromJson(Map<String, dynamic> json){
+    List<Parameter> parameters = (json['parameters'] as List).map((i) => Parameter.fromJson(i)).toList();
+    return Operation(
+      method: json['method'],
+      description: json['description'],
+      parameters: parameters,
+      responses: Responses.fromJson(json['responses']).responses
+    );
+  }
+}
+
+class Parameter{
+  final String name;
+  final String type;
+  final String location;
+
+  Parameter({this.name, this.type, this.location});
+
+  factory Parameter.fromJson(Map<String, dynamic> json){
+    return Parameter(
+      name: json['name'],
+      type: json['type'],
+      location: json['location']
+    );
+  }
+}
+
+class Responses{
+  final List<Response> responses;
+  
+  Responses({this.responses});
+  
+  factory Responses.fromJson(Map<String, dynamic> json){
+    List<Response> responses = json.entries.map((entry) => Response.fromJson(int.parse(entry.key), entry.value));
+    return Responses(
+      responses: responses
+    );
+  }
+}
+
+class Response{
+  final int code;
+  final String type;
+  
+  Response({this.code, this.type});
+  
+  factory Response.fromJson(int code, Map<String, dynamic> json){
+    return Response(
+      code: code,
+      type: json['type']
+    );
+  }
 }
 
 class Model{
