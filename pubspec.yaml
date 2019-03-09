@@ -8,7 +8,8 @@ environment:
   sdk: '>=2.1.0 <3.0.0'
 
 dependencies:
-  code_builder: 3.2.0
+  code_builder:
+    path: /web/code_builder
   dart_style: ^1.0.0
 #  path: ^1.4.1
 

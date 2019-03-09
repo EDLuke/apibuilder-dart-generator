@@ -17,10 +17,8 @@ main(List<String> arguments) {
   var clientsList = resources.entries.map((MapEntry<String, dynamic> entry) => Client.fromJson(entry.key, entry.value));
 
   modelsList.forEach((model) => modelClass(model));
-  clientsList.forEach((client) => clientClass(client);
+  clientsList.forEach((client) => clientClass(client));
 }
-
-final _dartfmt = DartFormatter();
 
 modelClass(Model model){
 
@@ -56,11 +54,76 @@ modelClass(Model model){
 }
 
 clientClass(Client client){
-  
+  String clientName = '${toClassName(client.name)}Client';
+
+  final clientGenerated = dartBuilder.Class((c) => c
+    ..name = clientName
+    ..fields.add(dartBuilder.Field((f) => f
+      ..name = "baseUrl"
+      ..modifier = dartBuilder.FieldModifier.final$
+      ..type = dartBuilder.Reference("String")
+    ))
+    ..constructors.add(
+      dartBuilder.Constructor((c) => c
+        ..requiredParameters.add(dartBuilder.Parameter((p) => p
+          ..name = 'this.baseUrl'))
+      )
+    )
+    ..methods.addAll(client.operations.map((operation) => operationClass(operation, client.name, client.path)))
+  );
+
+  final temp = dartBuilder.Library((l) => l
+      ..body
+
+  );
+
+  final emitter = dartBuilder.DartEmitter(dartBuilder.Allocator());
+  final String modelString = DartFormatter().format('${clientGenerated.accept(emitter)}');
+
+  final fileName = './output/${client.name.toLowerCase()}Client.dart';
+
+  new File(fileName).writeAsString(modelString);
+}
+
+dartBuilder.Method operationClass(Operation operation, String resourceName, String resourcePath){
+  final operationGenerated = dartBuilder.Method((m) => m
+    ..name = '${operation.method.toLowerCase()}${toClassName(resourceName)}'
+    ..returns = dartBuilder.Reference('Future<${toClassName(resourceName)}>', '$resourceName.dart')
+    ..modifier = dartBuilder.MethodModifier.async
+    ..body = dartBuilder.Code.scope((s) {
+      return operationMethod(operation, resourceName);
+    })
+  );
+
+  return operationGenerated;
+}
+
+String operationMethod(Operation operation, String resourceName) {
+  String url = "final String url = baseUrl;\n";
+  String response = "final response = await http.get(url);\n";
+
+  String responseSwitch = "switch(response){\n";
+  operation.responses.forEach((response) =>
+    responseSwitch + 'case ${response.code}:\n return ${toClassName(response.type)}.fromJson(json.decode(response.body));\n'
+  );
+  responseSwitch + "default:\n throw Exception('Failed to load ${resourceName}');\n";
+
+//  return url + response + responseSwitch;
+
+return "";
+
+  /*
+  * switch(response.statusCode){
+      case 200:
+        return Results.fromJson(json.decode(response.body));
+      default:
+        throw Exception('Failed to load users');
+    }*/
+
 }
 
 String factoryConstructor(String name, List<Field> fields) {
-  var parameterString = fields.map((f) =>
+  String parameterString = fields.map((f) =>
   '${f.name}: json[\'${f.name}\']'
   ).join(",\n");
 
@@ -130,7 +193,9 @@ class Responses{
   Responses({this.responses});
   
   factory Responses.fromJson(Map<String, dynamic> json){
-    List<Response> responses = json.entries.map((entry) => Response.fromJson(int.parse(entry.key), entry.value));
+    List<Response> responses = json.entries.map((entry) =>
+        Response.fromJson(int.parse(entry.key), entry.value)
+    ).toList();
     return Responses(
       responses: responses
     );
