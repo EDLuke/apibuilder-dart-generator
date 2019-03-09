@@ -27,7 +27,7 @@ modelClass(Model model){
     ..fields = ListBuilder(model.fields.map((field) => dartBuilder.Field((f) => f
       ..name = field.name
       ..modifier = dartBuilder.FieldModifier.final$
-      ..type = dartBuilder.Reference(getDartType(field.type))
+      ..type = getDartType(field.type)
       )))
     ..constructors.addAll([
       dartBuilder.Constructor((c) => c
@@ -45,7 +45,7 @@ modelClass(Model model){
               return factoryConstructor(model.name, model.fields);
           }))
     ]));
-  final emitter = dartBuilder.DartEmitter();
+  final emitter = dartBuilder.DartEmitter(dartBuilder.Allocator());
   final String modelString = DartFormatter().format('${modelGenerated.accept(emitter)}');
 
   final fileName = './output/${model.name.toLowerCase()}.dart';
@@ -109,23 +109,11 @@ String operationMethod(Operation operation, String resourceName) {
   responseSwitch += "\tdefault:\n \t\tthrow Exception('Failed to load ${resourceName}');\n}\n";
 
   return url + response + responseSwitch;
-
-//  print("$url$response$responseSwitch");
-//  return "";
-
-  /*
-  * switch(response.statusCode){
-      case 200:
-        return Results.fromJson(json.decode(response.body));
-      default:
-        throw Exception('Failed to load users');
-    }*/
-
 }
 
 String factoryConstructor(String name, List<Field> fields) {
   String parameterString = fields.map((f) =>
-  '${f.name}: json[\'${f.name}\']'
+    factoryConstructorField(f)
   ).join(",\n");
 
   var constructorString =
@@ -134,6 +122,13 @@ String factoryConstructor(String name, List<Field> fields) {
       ');';
 
   return constructorString;
+}
+
+String factoryConstructorField(Field f){
+  if(isBuiltInType(f.type))
+    return '${f.name}: json[\'${f.name}\']';
+  else
+    return '${f.name}: ${toClassName(f.name)}.fromJson(json[\'${f.name}\'])';
 }
 
 class Client{
@@ -247,12 +242,23 @@ class Field{
 }
 
 String toClassName(String className){
-  return '${className[0].toUpperCase()}${className.substring(1)}';
+  //camelCase className
+  final List<String> parts = className.split('_');
+  StringBuffer output = StringBuffer();
+  parts.forEach((p) =>
+    output.write(toProperCase(p))
+  );
+  return output.toString();
 }
 
-String getDartType(String apiBuilderType){
+String toProperCase(String s){
+  return '${s[0].toUpperCase()}${s.substring(1)}';
+}
+
+dartBuilder.Reference getDartType(String apiBuilderType){
   apiBuilderType = apiBuilderType.toLowerCase();
   String dartType;
+  String import;
 
   switch(apiBuilderType){
     case "string":
@@ -273,8 +279,21 @@ String getDartType(String apiBuilderType){
       dartType = "Map<String, dynamic>";
       break;
     default:
-      throw FormatException('Type $apiBuilderType is unsupported currently');
+      dartType = toClassName(apiBuilderType);
+      import = "$apiBuilderType.dart";
+      break;
+//      throw FormatException('Type $apiBuilderType is unsupported currently');
   }
 
-  return dartType;
+  return dartBuilder.Reference(dartType, import);
+}
+
+bool isBuiltInType(String apiBuilderType){
+  return apiBuilderType == "string" ||
+      apiBuilderType == "boolean" ||
+      apiBuilderType == "double" ||
+      apiBuilderType == "decimal" ||
+      apiBuilderType == "integer" ||
+      apiBuilderType == "long" ||
+      apiBuilderType == "json";
 }
