@@ -4,6 +4,10 @@ import 'package:built_collection/built_collection.dart';
 import 'package:code_builder/code_builder.dart' as dartBuilder;
 import 'package:dart_style/dart_style.dart';
 
+
+List<Model> modelsList;
+List<Client> clientsList;
+
 main(List<String> arguments) {
   File file = File(arguments.first);
   String jsonRaw = file.readAsStringSync();
@@ -13,8 +17,8 @@ main(List<String> arguments) {
   Map<String, dynamic> models = jsonParsed['models'];
   Map<String, dynamic> resources = jsonParsed['resources'];
 
-  var modelsList = models.entries.map((MapEntry<String, dynamic> entry) => Model.fromJson(entry.key, entry.value));
-  var clientsList = resources.entries.map((MapEntry<String, dynamic> entry) => Client.fromJson(entry.key, entry.value));
+  modelsList = models.entries.map((MapEntry<String, dynamic> entry) => Model.fromJson(entry.key, entry.value)).toList();
+  clientsList = resources.entries.map((MapEntry<String, dynamic> entry) => Client.fromJson(entry.key, entry.value)).toList();
 
   modelsList.forEach((model) => modelClass(model));
   clientsList.forEach((client) => clientClass(client));
@@ -125,10 +129,17 @@ String factoryConstructor(String name, List<Field> fields) {
 }
 
 String factoryConstructorField(Field f){
-  if(isBuiltInType(f.type))
-    return '${f.name}: json[\'${f.name}\']';
-  else
-    return '${f.name}: ${toClassName(f.name)}.fromJson(json[\'${f.name}\'])';
+  if(isListType(f.type)) {
+    final String type = f.type.substring(1, f.type.length - 1);
+    return "${f.name}: (json[\'${f.name}\'] as List).map((i) => ${toClassName(
+        type)}.fromJson(i)).toList()";
+  }
+  else {
+    if (isBuiltInType(f.type))
+      return '${f.name}: json[\'${f.name}\']';
+    else
+      return '${f.name}: ${toClassName(f.name)}.fromJson(json[\'${f.name}\'])';
+  }
 }
 
 class Client{
@@ -260,6 +271,11 @@ dartBuilder.Reference getDartType(String apiBuilderType){
   String dartType;
   String import;
 
+  bool isArray = isListType(apiBuilderType);
+
+  if(isArray)
+    apiBuilderType = apiBuilderType.substring(1, apiBuilderType.length - 1);
+
   switch(apiBuilderType){
     case "string":
       dartType = "String";
@@ -279,13 +295,23 @@ dartBuilder.Reference getDartType(String apiBuilderType){
       dartType = "Map<String, dynamic>";
       break;
     default:
-      dartType = toClassName(apiBuilderType);
-      import = "$apiBuilderType.dart";
-      break;
-//      throw FormatException('Type $apiBuilderType is unsupported currently');
+      if(modelsList.any((model) => model.name.toLowerCase() == apiBuilderType)) {
+        dartType = toClassName(apiBuilderType);
+        import = "$apiBuilderType.dart";
+        break;
+      }
+      else
+        throw FormatException('Type $apiBuilderType is not found');
   }
 
+  if(isArray)
+    dartType = "List<$dartType>";
+
   return dartBuilder.Reference(dartType, import);
+}
+
+bool isListType(String apiBuilderType){
+  return apiBuilderType.startsWith("[") && apiBuilderType.endsWith("]");
 }
 
 bool isBuiltInType(String apiBuilderType){

@@ -38,6 +38,14 @@
           "type": "account"
         }
       ]
+    },
+    "account_list": {
+      "fields": [
+        {
+          "name": "accounts",
+          "type": "[account]"
+        }
+      ]
     }
   },
   "resources": {
