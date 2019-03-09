@@ -72,17 +72,17 @@ clientClass(Client client){
     ..methods.addAll(client.operations.map((operation) => operationClass(operation, client.name, client.path)))
   );
 
-  final temp = dartBuilder.Library((l) => l
-      ..body
-
-  );
-
   final emitter = dartBuilder.DartEmitter(dartBuilder.Allocator());
   final String modelString = DartFormatter().format('${clientGenerated.accept(emitter)}');
 
+  final String modelStringWithImports =
+      "import \'dart:async\';\n"
+      "import \'dart:convert\';\n"
+      "import \'package:http/http.dart\' as http;\n" + modelString;
+
   final fileName = './output/${client.name.toLowerCase()}Client.dart';
 
-  new File(fileName).writeAsString(modelString);
+  new File(fileName).writeAsString(modelStringWithImports);
 }
 
 dartBuilder.Method operationClass(Operation operation, String resourceName, String resourcePath){
@@ -102,15 +102,16 @@ String operationMethod(Operation operation, String resourceName) {
   String url = "final String url = baseUrl;\n";
   String response = "final response = await http.get(url);\n";
 
-  String responseSwitch = "switch(response){\n";
+  String responseSwitch = "switch(response.statusCode){\n";
   operation.responses.forEach((response) =>
-    responseSwitch + 'case ${response.code}:\n return ${toClassName(response.type)}.fromJson(json.decode(response.body));\n'
+    responseSwitch += '\tcase ${response.code}:\n \t\treturn ${toClassName(response.type)}.fromJson(json.decode(response.body));\n'
   );
-  responseSwitch + "default:\n throw Exception('Failed to load ${resourceName}');\n";
+  responseSwitch += "\tdefault:\n \t\tthrow Exception('Failed to load ${resourceName}');\n}\n";
 
-//  return url + response + responseSwitch;
+  return url + response + responseSwitch;
 
-return "";
+//  print("$url$response$responseSwitch");
+//  return "";
 
   /*
   * switch(response.statusCode){
