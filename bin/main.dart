@@ -391,6 +391,11 @@ dartBuilder.Reference getDartType(String apiBuilderType){
         import = "$apiBuilderType.dart";
         break;
       }
+      else if(unionsList.any((union) => union.name.toLowerCase() == apiBuilderType)) {
+        dartType = toClassName(apiBuilderType);
+        import = "$apiBuilderType.dart";
+        break;
+      }
       else
         throw FormatException('Type $apiBuilderType is not found');
   }
