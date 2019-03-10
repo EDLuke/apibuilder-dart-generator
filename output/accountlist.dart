@@ -1,6 +1,7 @@
+import 'AccountUnion.dart';
 import 'account.dart';
 
-class AccountList {
+class AccountList implements AccountUnion {
   AccountList({this.accounts});
 
   factory AccountList.fromJson(Map<String, dynamic> json) {

@@ -1,4 +1,6 @@
-class Account {
+import 'AccountUnion.dart';
+
+class Account implements AccountUnion {
   Account({this.id, this.first_name, this.last_name, this.email});
 
   factory Account.fromJson(Map<String, dynamic> json) {
@@ -6,7 +8,7 @@ class Account {
         id: json['id'],
         first_name: json['first_name'],
         last_name: json['last_name'],
-        email: json['email']);
+        email: (json.containsKey("email")) ? json['email'] : null);
   }
 
   final int id;

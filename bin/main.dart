@@ -7,6 +7,7 @@ import 'package:dart_style/dart_style.dart';
 
 List<Model> modelsList;
 List<Client> clientsList;
+List<Union> unionsList;
 
 main(List<String> arguments) {
   File file = File(arguments.first);
@@ -16,18 +17,23 @@ main(List<String> arguments) {
 
   Map<String, dynamic> models = jsonParsed['models'];
   Map<String, dynamic> resources = jsonParsed['resources'];
+  Map<String, dynamic> unions = jsonParsed['unions'];
 
   modelsList = models.entries.map((MapEntry<String, dynamic> entry) => Model.fromJson(entry.key, entry.value)).toList();
   clientsList = resources.entries.map((MapEntry<String, dynamic> entry) => Client.fromJson(entry.key, entry.value)).toList();
+  unionsList = unions.entries.map((MapEntry<String, dynamic> entry) => Union.fromJson(entry.key, entry.value)).toList();
 
   modelsList.forEach((model) => modelClass(model));
   clientsList.forEach((client) => clientClass(client));
+  unionsList.forEach((union) => unionClass(union));
 }
 
 modelClass(Model model){
-
+  final String modelClassName = toClassName(model.name);
+  
   final modelGenerated = dartBuilder.Class((b) => b
-    ..name = model.name
+    ..name = modelClassName
+    ..implements.addAll(getUnionType(model.name))
     ..fields = ListBuilder(model.fields.map((field) => dartBuilder.Field((f) => f
       ..name = field.name
       ..modifier = dartBuilder.FieldModifier.final$
@@ -46,19 +52,19 @@ modelClass(Model model){
           ..name = "json"
           ..type = dartBuilder.Reference("Map<String, dynamic>")))
           ..body = dartBuilder.Code.scope((s){
-              return factoryConstructor(model.name, model.fields);
+              return factoryConstructor(modelClassName, model.fields);
           }))
     ]));
   final emitter = dartBuilder.DartEmitter(dartBuilder.Allocator());
   final String modelString = DartFormatter().format('${modelGenerated.accept(emitter)}');
 
-  final fileName = './output/${model.name.toLowerCase()}.dart';
+  final fileName = './output/${modelClassName.toLowerCase()}.dart';
 
   new File(fileName).writeAsString(modelString);
 }
 
 clientClass(Client client){
-  String clientName = '${toClassName(client.name)}Client';
+  final String clientName = '${toClassName(client.name)}Client';
 
   final clientGenerated = dartBuilder.Class((c) => c
     ..name = clientName
@@ -87,6 +93,22 @@ clientClass(Client client){
   final fileName = './output/${client.name.toLowerCase()}Client.dart';
 
   new File(fileName).writeAsString(modelStringWithImports);
+}
+
+unionClass(Union union){
+  final String unionClassName = toClassName(union.name);
+
+  //Generate empty class for interface
+  final interfaceGenerated = dartBuilder.Class((b) => b
+    ..name = unionClassName);
+
+  final emitter = dartBuilder.DartEmitter(dartBuilder.Allocator());
+  final String modelString = DartFormatter().format('${interfaceGenerated.accept(emitter)}');
+
+  final fileName = './output/${unionClassName.toLowerCase()}.dart';
+
+  new File(fileName).writeAsString(modelString);
+
 }
 
 dartBuilder.Method operationClass(Operation operation, String resourceName, String resourcePath){
@@ -129,16 +151,45 @@ String factoryConstructor(String name, List<Field> fields) {
 }
 
 String factoryConstructorField(Field f){
+  String block;
+
   if(isListType(f.type)) {
     final String type = f.type.substring(1, f.type.length - 1);
-    return "${f.name}: (json[\'${f.name}\'] as List).map((i) => ${toClassName(
+    block = "(json[\'${f.name}\'] as List).map((i) => ${toClassName(
         type)}.fromJson(i)).toList()";
   }
   else {
     if (isBuiltInType(f.type))
-      return '${f.name}: json[\'${f.name}\']';
+      block = 'json[\'${f.name}\']';
     else
-      return '${f.name}: ${toClassName(f.name)}.fromJson(json[\'${f.name}\'])';
+      block = '${toClassName(f.name)}.fromJson(json[\'${f.name}\'])';
+  }
+
+  return '${f.name}: ${factoryConstructorOptionalBlock(f, block)}';
+}
+
+String factoryConstructorOptionalBlock(Field f, String block){
+  if(f.required)
+    return block;
+  else{
+    return "(json.containsKey(\"${f.name}\")) ? $block : null";
+  }
+}
+
+class Union{
+  final String name;
+  final List<String> types;
+
+  Union({this.name, this.types});
+
+  factory Union.fromJson(String name, Map<String, dynamic> json){
+    return Union(
+      name: name,
+      types: (json['types'] as List)
+        .map((i) => i['type'])
+        .toList()
+        .cast<String>()
+    );
   }
 }
 
@@ -232,7 +283,7 @@ class Model{
   factory Model.fromJson(String name, Map<String, dynamic> json){
     List<Field> fields = (json['fields'] as List).map((i) => Field.fromJson(i)).toList();
     return Model(
-      name: toClassName(name),
+      name: name,
       fields: fields
     );
   }
@@ -241,13 +292,15 @@ class Model{
 class Field{
   final String name;
   final String type;
+  final bool required;
 
-  Field({this.name, this.type});
+  Field({this.name, this.type, this.required});
 
   factory Field.fromJson(Map<String, dynamic> json){
     return Field(
       name: json["name"],
-      type: json["type"]
+      type: json["type"],
+      required: (json.containsKey("required")) ? json["required"] : true
     );
   }
 }
@@ -308,6 +361,18 @@ dartBuilder.Reference getDartType(String apiBuilderType){
     dartType = "List<$dartType>";
 
   return dartBuilder.Reference(dartType, import);
+}
+
+List<dartBuilder.Reference> getUnionType(String apiBuilderType){
+  final Union interface = unionsList.firstWhere((union) => union.types.contains(apiBuilderType), orElse: () => null);
+
+  if(interface != null) {
+    final String interfaceClassName = toClassName(interface.name);
+
+    return [dartBuilder.Reference(interfaceClassName, "$interfaceClassName.dart")];
+  }
+  else
+    return List();
 }
 
 bool isListType(String apiBuilderType){

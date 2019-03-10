@@ -9,7 +9,18 @@
   "base_url": "https://localhost.com",
   "description": "LocalLook API",
   "enums": {},
-  "unions": {},
+  "unions": {
+    "account_union":{
+      "types" :[
+        {
+          "type" : "account"
+        },
+        {
+          "type" : "account_list"
+        }
+      ]
+    }
+  },
   "models": {
     "account": {
       "fields": [
@@ -27,7 +38,8 @@
         },
         {
           "name": "email",
-          "type": "string"
+          "type": "string",
+          "required": false
         }
       ]
     },
