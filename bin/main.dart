@@ -8,9 +8,11 @@ import 'package:dart_style/dart_style.dart';
 List<Model> modelsList;
 List<Client> clientsList;
 List<Union> unionsList;
+String outputDir;
 
 main(List<String> arguments) {
   File file = File(arguments.first);
+  outputDir = arguments[1];
   String jsonRaw = file.readAsStringSync();
 
   Map<String, dynamic> jsonParsed = json.decode(jsonRaw);
@@ -58,7 +60,7 @@ modelClass(Model model){
   final emitter = dartBuilder.DartEmitter(dartBuilder.Allocator());
   final String modelString = DartFormatter().format('${modelGenerated.accept(emitter)}');
 
-  final fileName = './output/${modelClassName.toLowerCase()}.dart';
+  final fileName = '$outputDir/${modelClassName.toLowerCase()}.dart';
 
   new File(fileName).writeAsString(modelString);
 }
@@ -90,7 +92,7 @@ clientClass(Client client){
       "import \'dart:convert\';\n"
       "import \'package:http/http.dart\' as http;\n" + modelString;
 
-  final fileName = './output/${clientName.toLowerCase()}.dart';
+  final fileName = '$outputDir/${clientName.toLowerCase()}.dart';
 
   new File(fileName).writeAsString(modelStringWithImports);
 }
@@ -122,7 +124,7 @@ unionClass(Union union){
           "\n\n" +
           unionString;
 
-  final fileName = './output/${unionClassName.toLowerCase()}.dart';
+  final fileName = '$outputDir/${unionClassName.toLowerCase()}.dart';
 
   new File(fileName).writeAsString(unionStringWithImports);
 
