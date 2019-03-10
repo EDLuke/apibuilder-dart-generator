@@ -61,7 +61,7 @@
     }
   },
   "resources": {
-    "account": {
+    "account_union": {
       "path": "/account",
       "operations": [
         {
@@ -76,7 +76,7 @@
           ],
           "responses": {
             "200": {
-              "type": "account"
+              "type": "account_union"
             }
           }
         }

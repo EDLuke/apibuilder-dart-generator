@@ -90,7 +90,7 @@ clientClass(Client client){
       "import \'dart:convert\';\n"
       "import \'package:http/http.dart\' as http;\n" + modelString;
 
-  final fileName = './output/${client.name.toLowerCase()}Client.dart';
+  final fileName = './output/${clientName.toLowerCase()}.dart';
 
   new File(fileName).writeAsString(modelStringWithImports);
 }
@@ -100,21 +100,39 @@ unionClass(Union union){
 
   //Generate empty class for interface
   final interfaceGenerated = dartBuilder.Class((b) => b
-    ..name = unionClassName);
+    ..name = unionClassName
+    ..constructors.add(
+      dartBuilder.Constructor((c) => c
+        ..factory = true
+        ..name = "fromJson"
+        ..requiredParameters.add(dartBuilder.Parameter((p) => p
+          ..name = "json"
+          ..type = dartBuilder.Reference("Map<String, dynamic>")))
+          ..body = dartBuilder.Code.scope((s){
+            return factoryUnionConstructor(union);
+          }))
+      )
+    );
 
   final emitter = dartBuilder.DartEmitter(dartBuilder.Allocator());
-  final String modelString = DartFormatter().format('${interfaceGenerated.accept(emitter)}');
+  final String unionString = DartFormatter().format('${interfaceGenerated.accept(emitter)}');
+
+  final String unionStringWithImports =
+      union.types.map((type) => "import \'${toClassName(type).toLowerCase()}.dart\';").join("\n") +
+          "\n\n" +
+          unionString;
 
   final fileName = './output/${unionClassName.toLowerCase()}.dart';
 
-  new File(fileName).writeAsString(modelString);
+  new File(fileName).writeAsString(unionStringWithImports);
 
 }
+
 
 dartBuilder.Method operationClass(Operation operation, String resourceName, String resourcePath){
   final operationGenerated = dartBuilder.Method((m) => m
     ..name = '${operation.method.toLowerCase()}${toClassName(resourceName)}'
-    ..returns = dartBuilder.Reference('Future<${toClassName(resourceName)}>', '$resourceName.dart')
+    ..returns = dartBuilder.Reference('Future<${toClassName(resourceName)}>', '${toClassName(resourceName).toLowerCase()}.dart')
     ..modifier = dartBuilder.MethodModifier.async
     ..body = dartBuilder.Code.scope((s) {
       return operationMethod(operation, resourceName);
@@ -174,6 +192,43 @@ String factoryConstructorOptionalBlock(Field f, String block){
   else{
     return "(json.containsKey(\"${f.name}\")) ? $block : null";
   }
+}
+
+/*
+*
+import 'account.dart';
+import 'accountlist.dart';
+
+class AccountUnion {
+
+  factory AccountUnion.fromJson(Map<String, dynamic> json){
+    final String type = json['type'];
+    json.remove('type');
+
+    switch(type){
+      case 'account':
+        return Account.fromJson(json) as AccountUnion;
+      case 'account_list':
+        return AccountList.fromJson(json) as AccountUnion;
+      default:
+        throw FormatException('Unknown AccountUnion type: $type');
+    }
+  }
+}
+*/
+
+String factoryUnionConstructor(Union union){
+  final String typeDiff =
+      "final String type = json[\'type\'];\n"
+      "json.remove(\'type\');\n";
+
+  String typeSwitch = "switch(type){\n";
+  union.types.forEach((type) =>
+    typeSwitch += '\tcase \'$type\':\n\t\t return ${toClassName(type)}.fromJson(json) as ${toClassName(union.name)};\n'
+  );
+  typeSwitch += '\tdefault:\n\t\tthrow FormatException(\'Unknown ${toClassName(union.name)} type: \$type\');\n}';
+
+  return typeDiff + typeSwitch;
 }
 
 class Union{
@@ -373,6 +428,10 @@ List<dartBuilder.Reference> getUnionType(String apiBuilderType){
   }
   else
     return List();
+}
+
+bool isUnion(String apiBuilderType){
+  return unionsList.firstWhere((union) => union.types.contains(apiBuilderType), orElse: () => null) != null;
 }
 
 bool isListType(String apiBuilderType){
