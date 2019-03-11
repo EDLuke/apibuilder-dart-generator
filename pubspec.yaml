@@ -9,7 +9,7 @@ environment:
 
 dependencies:
   code_builder:
-    path: /web/code_builder
+    git: git@github.com:EDLuke/code_builder.git
   dart_style: ^1.0.0
 #  path: ^1.4.1
 

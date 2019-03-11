@@ -175,8 +175,12 @@ String factoryConstructorField(Field f){
 
   if(isListType(f.type)) {
     final String type = f.type.substring(1, f.type.length - 1);
-    block = "(json[\'${f.name}\'] as List).map((i) => ${toClassName(
-        type)}.fromJson(i)).toList()";
+
+    if (isBuiltInType(type))
+      block = ("new List<${getDartType(type).symbol}>.from(json[\'${f.name}\'])");
+    else
+      block = "(json[\'${f.name}\'] as List).map((i) => ${toClassName(
+          type)}.fromJson(i)).toList()";
   }
   else {
     if (isBuiltInType(f.type))
@@ -195,29 +199,6 @@ String factoryConstructorOptionalBlock(Field f, String block){
     return "(json.containsKey(\"${f.name}\")) ? $block : null";
   }
 }
-
-/*
-*
-import 'account.dart';
-import 'accountlist.dart';
-
-class AccountUnion {
-
-  factory AccountUnion.fromJson(Map<String, dynamic> json){
-    final String type = json['type'];
-    json.remove('type');
-
-    switch(type){
-      case 'account':
-        return Account.fromJson(json) as AccountUnion;
-      case 'account_list':
-        return AccountList.fromJson(json) as AccountUnion;
-      default:
-        throw FormatException('Unknown AccountUnion type: $type');
-    }
-  }
-}
-*/
 
 String factoryUnionConstructor(Union union){
   final String typeDiff =

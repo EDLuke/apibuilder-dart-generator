@@ -12,3 +12,6 @@ doc/api/
 
 # Intellij Dart Project
 .idea/
+
+# Output Dir
+output/
