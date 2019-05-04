@@ -158,11 +158,20 @@ String operationMethod(Operation operation, String resourceName) {
 
   String responseSwitch = "switch(response.statusCode){\n";
   operation.responses.forEach((response) =>
-    responseSwitch += '\tcase ${response.code}:\n \t\treturn ${toClassName(response.type)}.fromJson(json.decode(response.body));\n'
+    responseSwitch += operationResponse(response.code, response.type)
   );
   responseSwitch += "\tdefault:\n \t\tthrow Exception('Failed to load ${resourceName}');\n}\n";
 
   return url + response + responseSwitch;
+}
+
+String operationResponse(int responseCode, String type){
+  final String caseString = '\tcase ${responseCode}:\n';
+
+  if(isUnitType(type))
+    return caseString + '\t\treturn null;\n';
+  else
+    return caseString + '\t\treturn ${toClassName(type)}.fromJson(json.decode(response.body));\n';
 }
 
 String factoryConstructor(String name, List<Field> fields) {
@@ -442,4 +451,8 @@ bool isBuiltInType(String apiBuilderType){
       apiBuilderType == "integer" ||
       apiBuilderType == "long" ||
       apiBuilderType == "json";
+}
+
+bool isUnitType(String type){
+  return type == "unit";
 }
