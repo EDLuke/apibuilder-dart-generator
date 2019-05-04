@@ -32,10 +32,13 @@ main(List<String> arguments) {
 
 modelClass(Model model){
   final String modelClassName = toClassName(model.name);
+  final List<dartBuilder.Reference> unionType = getUnionType(model.name);
+  final bool hasUnion = unionType.isNotEmpty;
   
-  final modelGenerated = dartBuilder.Class((b) => b
+  final modelGenerated = dartBuilder.Class((b) {
+    return b
     ..name = modelClassName
-    ..implements.addAll(getUnionType(model.name))
+    ..implements.addAll(unionType)
     ..fields = ListBuilder(model.fields.map((field) => dartBuilder.Field((f) => f
       ..name = field.name
       ..modifier = dartBuilder.FieldModifier.final$
@@ -43,6 +46,7 @@ modelClass(Model model){
       )))
     ..constructors.addAll([
       dartBuilder.Constructor((c) => c
+        ..initializers.addAll( (hasUnion) ? [dartBuilder.Code("super()")] : [])
         ..optionalParameters = ListBuilder(model.fields.map((field) => dartBuilder.Parameter((p) => p
           ..name = 'this.${field.name}'
           ..named = true)))
@@ -56,9 +60,11 @@ modelClass(Model model){
           ..body = dartBuilder.Code.scope((s){
               return factoryConstructor(modelClassName, model.fields);
           }))
-    ]));
+    ]);
+  });
   final emitter = dartBuilder.DartEmitter(dartBuilder.Allocator());
   final String modelString = DartFormatter().format('${modelGenerated.accept(emitter)}');
+
 
   final fileName = '$outputDir/${modelClassName.toLowerCase()}.dart';
 
