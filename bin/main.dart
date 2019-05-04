@@ -74,6 +74,8 @@ modelClass(Model model){
 clientClass(Client client){
   final String clientName = '${toClassName(client.name)}Client';
 
+  print(clientName);
+
   final clientGenerated = dartBuilder.Class((c) => c
     ..name = clientName
     ..fields.add(dartBuilder.Field((f) => f
@@ -87,7 +89,7 @@ clientClass(Client client){
           ..name = 'this.baseUrl'))
       )
     )
-    ..methods.addAll(client.operations.map((operation) => operationClass(operation, client.name, client.path)))
+    ..methods = ListBuilder(client.operations.map((operation) => operationClass(operation, client.name, client.path)))
   );
 
   final emitter = dartBuilder.DartEmitter(dartBuilder.Allocator());
@@ -142,6 +144,7 @@ unionClass(Union union){
 dartBuilder.Method operationClass(Operation operation, String resourceName, String resourcePath){
   final operationGenerated = dartBuilder.Method((m) => m
     ..name = '${operation.method.toLowerCase()}${toClassName(resourceName)}'
+    ..requiredParameters = operationRequiredParameters(operation.parameters)
     ..returns = dartBuilder.Reference('Future<${toClassName(resourceName)}>', '${toClassName(resourceName).toLowerCase()}.dart')
     ..modifier = dartBuilder.MethodModifier.async
     ..body = dartBuilder.Code.scope((s) {
@@ -172,6 +175,27 @@ String operationResponse(int responseCode, String type){
     return caseString + '\t\treturn null;\n';
   else
     return caseString + '\t\treturn ${toClassName(type)}.fromJson(json.decode(response.body));\n';
+}
+
+ListBuilder<dartBuilder.Parameter> operationRequiredParameters(List<Parameter> parameters){
+  parameters.forEach((parameter) => print(parameter.name + "\t" + parameter.type));
+
+  List<Parameter> requiredParameter = parameters;
+  requiredParameter.retainWhere((parameter) => parameter.location != "header");
+
+  List<dartBuilder.Parameter> requiredParameterDart
+    = requiredParameter.map((parameter) => operationParameter(parameter)).toList();
+
+  return ListBuilder<dartBuilder.Parameter>(requiredParameterDart);
+//  return ListBuilder();
+
+}
+
+dartBuilder.Parameter operationParameter(Parameter parameter){
+  return  dartBuilder.Parameter((p) => p
+    ..name = parameter.name
+    ..type = getDartType(parameter.type)
+  );
 }
 
 String factoryConstructor(String name, List<Field> fields) {
