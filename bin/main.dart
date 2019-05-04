@@ -66,7 +66,7 @@ modelClass(Model model){
   final String modelString = DartFormatter().format('${modelGenerated.accept(emitter)}');
 
 
-  final fileName = '$outputDir/${modelClassName.toLowerCase()}.dart';
+  final fileName = '$outputDir/${model.name}.dart';
 
   new File(fileName).writeAsString(modelString);
 }
@@ -130,7 +130,7 @@ unionClass(Union union){
           "\n\n" +
           unionString;
 
-  final fileName = '$outputDir/${unionClassName.toLowerCase()}.dart';
+  final fileName = '$outputDir/${union.name}.dart';
 
   new File(fileName).writeAsString(unionStringWithImports);
 
