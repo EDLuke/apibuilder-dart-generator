@@ -109,7 +109,7 @@ unionClass(Union union){
   //Generate empty class for interface
   final interfaceGenerated = dartBuilder.Class((b) => b
     ..name = unionClassName
-    ..constructors.add(
+    ..constructors.addAll([
       dartBuilder.Constructor((c) => c
         ..factory = true
         ..name = "fromJson"
@@ -118,7 +118,9 @@ unionClass(Union union){
           ..type = dartBuilder.Reference("Map<String, dynamic>")))
           ..body = dartBuilder.Code.scope((s){
             return factoryUnionConstructor(union);
-          }))
+          })),
+      dartBuilder.Constructor((c) =>c
+        )]
       )
     );
 
