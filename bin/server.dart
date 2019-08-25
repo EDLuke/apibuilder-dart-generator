@@ -1,10 +1,11 @@
 import 'dart:io';
+
 Future main() async {
   var portEnv = Platform.environment['PORT'];
   var port = portEnv == null ? 4040 : int.parse(portEnv);
 
   var server = await HttpServer.bind(
-    InternetAddress.loopbackIPv4,
+    InternetAddress.anyIPv4,
     port,
   );
   print('Listening on localhost:${server.port}');
