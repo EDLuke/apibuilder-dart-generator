@@ -8,6 +8,7 @@ Future main() async {
   print('Listening on localhost:${server.port}');
 
   await for (HttpRequest request in server) {
+    print(request.toString());
     handleRequest(request);
     await request.response.close();
   }
