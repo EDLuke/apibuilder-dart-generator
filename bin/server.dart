@@ -1,5 +1,15 @@
 import 'dart:io';
 
+import 'models/server_models.dart';
+
+List<Generator> generators = [new Generator(
+    key: "1",
+    name: "Flutter Generator",
+    language: "dart",
+    description: "Flutter network client generator",
+    attributes: []
+)];
+
 Future main() async {
   var portEnv = Platform.environment['PORT'];
   var port = portEnv == null ? 4040 : int.parse(portEnv);
@@ -22,8 +32,9 @@ void handleRequest(HttpRequest request){
       handleGet(request);
     } else
       sendMethodNotAllowed(request.response, request.method);
-  } catch (e) {
+  } catch (e, stacktrace) {
     print('Exception in handleRequest: $e');
+    print(stacktrace);
   }
 }
 
@@ -36,7 +47,20 @@ void handleGet(HttpRequest request) {
     sendNotFound(response);
   else{
     if(segments.first == "generators"){
-
+      if(segments.length == 1){
+        response
+          ..statusCode = HttpStatus.ok
+          ..write(generators.toString())
+          ..close();
+      }
+      else if(segments.length == 2 && segments[1] == "1"){
+          response
+          ..statusCode = HttpStatus.ok
+          ..write(generators.first.toString())
+          ..close();
+      }
+      else
+        sendNotFound(response);
     }
     else if(segments.first == "_internal_"){
       if(segments.length < 2 || segments[1] != "healthcheck")
