@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'models/server_models.dart';
@@ -21,26 +22,33 @@ Future main() async {
   print('Listening on:${server.port}');
 
   await for (HttpRequest request in server) {
-    handleRequest(request);
-    await request.response.close();
+    final HttpResponse response = await handleRequest(request);
+    await response.close();
   }
 }
 
-void handleRequest(HttpRequest request){
+Future<HttpResponse> handleRequest(HttpRequest request) async {
   try{
-    if(request.method == 'GET'){
-      handleGet(request);
-    } else
+    if(request.method == 'GET')
+      return handleGet(request);
+    else if(request.method == 'POST')
+      return handlePost(request);
+    else
       sendMethodNotAllowed(request.response, request.method);
   } catch (e, stacktrace) {
     print('Exception in handleRequest: $e');
     print(stacktrace);
+
+    request.response
+      ..statusCode = HttpStatus.internalServerError
+      ..write("Exception during file I/O: $e.");
+  } finally {
+    return request.response;
   }
 }
 
-void handleGet(HttpRequest request) {
-  List<String> segments = request.uri.pathSegments;
-
+Future<HttpResponse> handleGet(HttpRequest request) async {
+  final List<String> segments = request.uri.pathSegments;
   final response = request.response;
 
   if(segments.isEmpty)
@@ -50,14 +58,12 @@ void handleGet(HttpRequest request) {
       if(segments.length == 1){
         response
           ..statusCode = HttpStatus.ok
-          ..write(generators.toString())
-          ..close();
+          ..write(generators.toString());
       }
-      else if(segments.length == 2 && segments[1] == "1"){
-          response
+      else if(segments.length == 2 && segments[1] == "1") {
+        response
           ..statusCode = HttpStatus.ok
-          ..write(generators.first.toString())
-          ..close();
+          ..write(generators.first.toString());
       }
       else
         sendNotFound(response);
@@ -67,28 +73,47 @@ void handleGet(HttpRequest request) {
         sendNotFound(response);
       else {
         response
-          ..statusCode = HttpStatus.ok
-          ..close();
+          ..statusCode = HttpStatus.ok;
       }
     }
     else
       sendNotFound(response);
   }
+  
+  return response;
 }
 
-void handlePost(HttpRequest request){
+Future<HttpResponse> handlePost(HttpRequest request) async {
+  final List<String> segments = request.uri.pathSegments;
+  final response = request.response;
 
+  if(segments.length != 2)
+    sendNotFound(response);
+  else{
+    if(segments.first == "invocations" && segments[1] == "1"){
+      try{
+        String content = await utf8.decoder.bind(request).join();
+        Map<String, dynamic> jsonParsed = jsonDecode(content);
+        print(jsonParsed);
+      }catch (e) {
+        print(e);
+        response
+          ..statusCode = HttpStatus.internalServerError
+          ..write("Exception during file I/O: $e.");
+      }
+    }
+  }
+  
+  return response;
 }
 
 void sendNotFound(HttpResponse response){
   response
-    ..statusCode = HttpStatus.notFound
-    ..close();
+    ..statusCode = HttpStatus.notFound;
 }
 
 void sendMethodNotAllowed(HttpResponse response, String method){
   response
     ..statusCode = HttpStatus.methodNotAllowed
-    ..write('Unsupported request: $method.')
-    ..close();
+    ..write('Unsupported request: $method.');
 }

@@ -1,34 +1,37 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:io' as dart;
 import 'package:built_collection/built_collection.dart';
 import 'package:code_builder/code_builder.dart' as dartBuilder;
 import 'package:dart_style/dart_style.dart';
 
+import 'models/server_models.dart';
+
 
 List<Model> modelsList;
-List<Client> clientsList;
+List<Resource> resourcesList;
 List<Union> unionsList;
 String outputDir;
 
-main(List<String> arguments) {
-  File file = File(arguments.first);
-  outputDir = arguments[1];
-  String jsonRaw = file.readAsStringSync();
-
-  Map<String, dynamic> jsonParsed = json.decode(jsonRaw);
-
-  Map<String, dynamic> models = jsonParsed['models'];
-  Map<String, dynamic> resources = jsonParsed['resources'];
-  Map<String, dynamic> unions = jsonParsed['unions'];
-
-  modelsList = models.entries.map((MapEntry<String, dynamic> entry) => Model.fromJson(entry.key, entry.value)).toList();
-  clientsList = resources.entries.map((MapEntry<String, dynamic> entry) => Client.fromJson(entry.key, entry.value)).toList();
-  unionsList = unions.entries.map((MapEntry<String, dynamic> entry) => Union.fromJson(entry.key, entry.value)).toList();
-
-  modelsList.forEach((model) => modelClass(model));
-  clientsList.forEach((client) => clientClass(client));
-  unionsList.forEach((union) => unionClass(union));
-}
+//generate(List<String> arguments) {
+//  File file = File(arguments.first);
+//  outputDir = arguments[1];
+//  String jsonRaw = file.readAsStringSync();
+//
+//  Map<String, dynamic> jsonParsed = json.decode(jsonRaw);
+//
+//  Map<String, dynamic> models = jsonParsed['models'];
+//  Map<String, dynamic> resources = jsonParsed['resources'];
+//  Map<String, dynamic> unions = jsonParsed['unions'];
+//
+//  modelsList = models.entries.map((MapEntry<String, dynamic> entry) => Model.fromJson(entry.key, entry.value)).toList();
+//  resourcesList = resources.entries.map((MapEntry<String, dynamic> entry) => Resource.fromJson(entry.key, entry.value)).toList();
+//  unionsList = unions.entries.map((MapEntry<String, dynamic> entry) => Union.fromJson(entry.key, entry.value)).toList();
+//
+//  modelsList.forEach((model) => modelClass(model));
+//  resourcesList.forEach((client) => clientClass(client));
+//  unionsList.forEach((union) => unionClass(union));
+//}
 
 modelClass(Model model){
   final String modelClassName = toClassName(model.name);
@@ -68,10 +71,10 @@ modelClass(Model model){
 
   final fileName = '$outputDir/${model.name}.dart';
 
-  new File(fileName).writeAsString(modelString);
+  new dart.File(fileName).writeAsString(modelString);
 }
 
-clientClass(Client client){
+clientClass(Resource client){
   final String clientName = '${toClassName(client.name)}Client';
 
   print(clientName);
@@ -102,7 +105,7 @@ clientClass(Client client){
 
   final fileName = '$outputDir/${clientName.toLowerCase()}.dart';
 
-  new File(fileName).writeAsString(modelStringWithImports);
+  new dart.File(fileName).writeAsString(modelStringWithImports);
 }
 
 unionClass(Union union){
@@ -136,8 +139,7 @@ unionClass(Union union){
 
   final fileName = '$outputDir/${union.name}.dart';
 
-  new File(fileName).writeAsString(unionStringWithImports);
-
+  new dart.File(fileName).writeAsString(unionStringWithImports);
 }
 
 
@@ -255,134 +257,6 @@ String factoryUnionConstructor(Union union){
   return typeDiff + typeSwitch;
 }
 
-class Union{
-  final String name;
-  final List<String> types;
-
-  Union({this.name, this.types});
-
-  factory Union.fromJson(String name, Map<String, dynamic> json){
-    return Union(
-      name: name,
-      types: (json['types'] as List)
-        .map((i) => i['type'])
-        .toList()
-        .cast<String>()
-    );
-  }
-}
-
-class Client{
-  final String name;
-  final String path;
-  final List<Operation> operations;
-
-  Client({this.name, this.path, this.operations});
-
-  factory Client.fromJson(String name, Map<String, dynamic> json){
-    List<Operation> operations = (json['operations'] as List).map((i) => Operation.fromJson(i)).toList();
-    return Client(
-      name: name,
-      path: json['path'],
-      operations: operations
-    );
-  }
-}
-
-class Operation{
-  final String method;
-  final String description;
-  final List<Parameter> parameters;
-  final List<Response> responses;
-  
-  Operation({this.method, this.description, this.parameters, this.responses});
-  
-  factory Operation.fromJson(Map<String, dynamic> json){
-    List<Parameter> parameters = (json['parameters'] as List).map((i) => Parameter.fromJson(i)).toList();
-    return Operation(
-      method: json['method'],
-      description: json['description'],
-      parameters: parameters,
-      responses: Responses.fromJson(json['responses']).responses
-    );
-  }
-}
-
-class Parameter{
-  final String name;
-  final String type;
-  final String location;
-
-  Parameter({this.name, this.type, this.location});
-
-  factory Parameter.fromJson(Map<String, dynamic> json){
-    return Parameter(
-      name: json['name'],
-      type: json['type'],
-      location: json['location']
-    );
-  }
-}
-
-class Responses{
-  final List<Response> responses;
-  
-  Responses({this.responses});
-  
-  factory Responses.fromJson(Map<String, dynamic> json){
-    List<Response> responses = json.entries.map((entry) =>
-        Response.fromJson(int.parse(entry.key), entry.value)
-    ).toList();
-    return Responses(
-      responses: responses
-    );
-  }
-}
-
-class Response{
-  final int code;
-  final String type;
-  
-  Response({this.code, this.type});
-  
-  factory Response.fromJson(int code, Map<String, dynamic> json){
-    return Response(
-      code: code,
-      type: json['type']
-    );
-  }
-}
-
-class Model{
-  final String name;
-  final List<Field> fields;
-
-  Model({this.name, this.fields});
-
-  factory Model.fromJson(String name, Map<String, dynamic> json){
-    List<Field> fields = (json['fields'] as List).map((i) => Field.fromJson(i)).toList();
-    return Model(
-      name: name,
-      fields: fields
-    );
-  }
-}
-
-class Field{
-  final String name;
-  final String type;
-  final bool required;
-
-  Field({this.name, this.type, this.required});
-
-  factory Field.fromJson(Map<String, dynamic> json){
-    return Field(
-      name: json["name"],
-      type: json["type"],
-      required: (json.containsKey("required")) ? json["required"] : true
-    );
-  }
-}
 
 String toClassName(String className){
   //camelCase className
