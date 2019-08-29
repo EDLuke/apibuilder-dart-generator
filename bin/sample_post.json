@@ -1,0 +1,92 @@
+{
+  "service": {
+    "name": "example-api",
+    "info": {
+      "contact": {
+        "name": "Luke Zhang",
+        "email": "lukezhang213@gmail.com"
+      }
+    },
+    "base_url": "https://localhost.com",
+    "description": "Example API",
+    "enums": {},
+    "unions": {
+      "account_union":{
+        "types" :[
+          {
+            "type" : "account"
+          },
+          {
+            "type" : "account_list"
+          }
+        ]
+      }
+    },
+    "models": {
+      "account": {
+        "fields": [
+          {
+            "name": "id",
+            "type": "long"
+          },
+          {
+            "name": "first_name",
+            "type": "string"
+          },
+          {
+            "name": "last_name",
+            "type": "string"
+          },
+          {
+            "name": "address_list",
+            "type": "[string]"
+          },
+          {
+            "name": "email",
+            "type": "string",
+            "required": false
+          }
+        ]
+      },
+      "nested_account": {
+        "fields": [
+          {
+            "name": "account",
+            "type": "account"
+          }
+        ]
+      },
+      "account_list": {
+        "fields": [
+          {
+            "name": "accounts",
+            "type": "[account]"
+          }
+        ]
+      }
+    },
+    "resources": {
+      "account_union": {
+        "path": "/account",
+        "operations": [
+          {
+            "method": "GET",
+            "description": "Basic account information",
+            "parameters": [
+              {
+                "name": "sessionId",
+                "type": "int",
+                "location": "header"
+              }
+            ],
+            "responses": {
+              "200": {
+                "type": "account_union"
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

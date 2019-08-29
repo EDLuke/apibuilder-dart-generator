@@ -36,14 +36,26 @@ class InvocationForm{
 class Invocation{
   final List<File> files;
 
-  Invocation({this.files});
+  Invocation(this.files);
+
+  Map<String, dynamic> toJson() => {
+    "source": "",
+    "files": files
+  };
+
+  String toJsonString() => jsonEncode(this);
 }
 
 class File{
   final String name;
   final String contents;
 
-  File({this.name, this.contents});
+  File(this.name, this.contents);
+
+  Map<String, dynamic> toJson() => {
+    "name": name,
+    "contents": contents
+  };
 }
 
 class Service{
