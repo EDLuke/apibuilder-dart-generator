@@ -6,7 +6,7 @@ import 'generator.dart';
 import 'models/server_models.dart';
 
 List<Generator> generators = [new Generator(
-    key: "1",
+    key: "dart_client",
     name: "Flutter Generator",
     language: "dart",
     description: "Flutter network client generator",
@@ -50,7 +50,6 @@ Future<HttpResponse> handleRequest(HttpRequest request) async {
 }
 
 Future<HttpResponse> handleGet(HttpRequest request) async {
-  print("CHECK");
   final List<String> segments = request.uri.pathSegments;
   final response = request.response;
 

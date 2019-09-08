@@ -74,7 +74,7 @@
           "parameters": [
             {
               "name": "sessionId",
-              "type": "int",
+              "type": "integer",
               "location": "header"
             }
           ],

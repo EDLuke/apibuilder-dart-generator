@@ -66,13 +66,15 @@ class Service{
   Service({this.unions, this.models, this.resources});
 
   factory Service.fromJson(Map<String, dynamic> json){
-    Map<String, dynamic> models = json['models'];
-    Map<String, dynamic> resources = json['resources'];
-    Map<String, dynamic> unions = json['unions'];
 
-    List<Model> modelsList = models.entries.map((MapEntry<String, dynamic> entry) => Model.fromJson(entry.key, entry.value)).toList();
-    List<Resource> resourcesList = resources.entries.map((MapEntry<String, dynamic> entry) => Resource.fromJson(entry.key, entry.value)).toList();
-    List<Union> unionsList = unions.entries.map((MapEntry<String, dynamic> entry) => Union.fromJson(entry.key, entry.value)).toList();
+    List<dynamic> models = json['models'];
+    List<dynamic> resources = json['resources'];
+    List<dynamic> unions = json['unions'];
+
+
+    List<Model> modelsList = models.map((entry) => Model.fromJson(entry)).toList();
+    List<Resource> resourcesList = resources.map((entry) => Resource.fromJson(entry)).toList();
+    List<Union> unionsList = unions.map((entry) => Union.fromJson(entry)).toList();
 
     return Service(
       unions: unionsList,
@@ -97,9 +99,9 @@ class Union{
 
   Union({this.name, this.types});
 
-  factory Union.fromJson(String name, Map<String, dynamic> json){
+  factory Union.fromJson(Map<String, dynamic> json){
     return Union(
-        name: name,
+        name: json['name'],
         types: (json['types'] as List)
             .map((i) => i['type'])
             .toList()
@@ -115,10 +117,10 @@ class Resource{
 
   Resource({this.name, this.path, this.operations});
 
-  factory Resource.fromJson(String name, Map<String, dynamic> json){
+  factory Resource.fromJson(Map<String, dynamic> json){
     List<Operation> operations = (json['operations'] as List).map((i) => Operation.fromJson(i)).toList();
     return Resource(
-        name: name,
+        name: json['type'],
         path: json['path'],
         operations: operations
     );
@@ -165,9 +167,9 @@ class Responses{
 
   Responses({this.responses});
 
-  factory Responses.fromJson(Map<String, dynamic> json){
-    List<Response> responses = json.entries.map((entry) =>
-        Response.fromJson(int.parse(entry.key), entry.value)
+  factory Responses.fromJson(List<dynamic> json){
+    List<Response> responses = json.map((entry) =>
+        Response.fromJson(200, entry) //TODO: Fix this
     ).toList();
     return Responses(
         responses: responses
@@ -195,10 +197,10 @@ class Model{
 
   Model({this.name, this.fields});
 
-  factory Model.fromJson(String name, Map<String, dynamic> json){
+  factory Model.fromJson(Map<String, dynamic> json){
     List<Field> fields = (json['fields'] as List).map((i) => Field.fromJson(i)).toList();
     return Model(
-        name: name,
+        name: json['name'],
         fields: fields
     );
   }
