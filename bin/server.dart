@@ -92,7 +92,7 @@ Future<HttpResponse> handlePost(HttpRequest request) async {
   if(segments.length != 2)
     sendNotFound(response);
   else{
-    if(segments.first == "invocations" && segments[1] == "1"){
+    if(segments.first == "invocations" && segments[1] == "dart_client"){
       try{
         String content = await utf8.decoder.bind(request).join();
         Map<String, dynamic> jsonParsed = jsonDecode(content);

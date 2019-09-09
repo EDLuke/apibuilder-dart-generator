@@ -21,7 +21,7 @@ main(List<String> arguments) {
   FileGenerator generator = new FileGenerator(invocationForm);
 
   Invocation invocation = generator.getInvocation();
-  print(invocation.toJsonString());
+//  print(invocation.toJsonString());
 //  List<File> modelFile = invocationForm.service.models.map((Model entry) => modelClass(entry)).toList();
 //  List<File> resourceFile = invocationForm.service.resources.map((Resource entry) => clientClass(entry)).toList();
 //  List<File> unionFile = invocationForm.service.unions.map((Union entry) => unionClass(entry)).toList();
@@ -104,7 +104,7 @@ class FileGenerator {
     final String modelString = DartFormatter().format(
         '${modelGenerated.accept(emitter)}');
 
-    final fileName = '$outputDir/${model.name}.dart';
+    final fileName = '${model.name}.dart';
 
     return new File(fileName, modelString);
   }
@@ -142,7 +142,7 @@ class FileGenerator {
             "import \'dart:convert\';\n"
             "import \'package:http/http.dart\' as http;\n" + modelString;
 
-    final fileName = '$outputDir/${clientName.toLowerCase()}.dart';
+    final fileName = '${clientName.toLowerCase()}.dart';
 
     return new File(fileName, modelStringWithImports);
   }
@@ -182,7 +182,7 @@ class FileGenerator {
             "\n\n" +
             unionString;
 
-    final fileName = '$outputDir/${union.name}.dart';
+    final fileName = '${union.name}.dart';
 
     return new File(fileName, unionStringWithImports);
   }
